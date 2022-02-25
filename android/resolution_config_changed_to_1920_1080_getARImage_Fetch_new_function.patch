@@ -1,0 +1,562 @@
+Index: android/viroar/src/main/cpp/arcore/ARCore_Native.cpp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/android/viroar/src/main/cpp/arcore/ARCore_Native.cpp b/android/viroar/src/main/cpp/arcore/ARCore_Native.cpp
+--- a/android/viroar/src/main/cpp/arcore/ARCore_Native.cpp	(revision 751dbca82b02de8d0b398e1fd0505d278acf9ec7)
++++ b/android/viroar/src/main/cpp/arcore/ARCore_Native.cpp	(date 1639400158669)
+@@ -10,6 +10,8 @@
+ #include <media/NdkImage.h>
+ #include <media/NdkImageReader.h>
+ #include <android/log.h>
++#include <string>
++#include <vector>
+ 
+ #ifndef LOG_TAG
+ #define LOG_TAG "Viro"
+@@ -756,10 +758,68 @@
+         }
+         return ConfigStatus::UnsupportedConfiguration;
+     }
+-
++    struct CameraConfig {
++        int32_t width = 0;
++        int32_t height = 0;
++        std::string config_label;
++        ArCameraConfig* config = nullptr;
++    };
++    void copyCameraConfig(
++            const ArSession* ar_session, const ArCameraConfigList* all_configs,
++            int index, int num_configs, CameraConfig* camera_config) {
++        if (camera_config != nullptr && index >= 0 && index < num_configs) {
++            ArCameraConfig_create(ar_session, &camera_config->config);
++            ArCameraConfigList_getItem(ar_session, all_configs, index,
++                                       camera_config->config);
++            ArCameraConfig_getImageDimensions(ar_session, camera_config->config,
++                                              &camera_config->width,
++                                              &camera_config->height);
++            camera_config->config_label = "(" + std::to_string(camera_config->width) +
++                                          "x" + std::to_string(camera_config->height) +
++                                          ")";
++        }
++    }
+     void
+     SessionNative::setDisplayGeometry(int rotation, int width, int height) {
+         ArSession_setDisplayGeometry(_session, rotation, width, height);
++        ArCameraConfigList *all_camera_configs = nullptr;
++        ArCameraConfigList_create(_session, &all_camera_configs);
++        ArCameraConfigFilter *camera_config_filter = nullptr;
++        ArCameraConfigFilter_create(_session, &camera_config_filter);
++        ArCameraConfigFilter_setTargetFps(_session, camera_config_filter,AR_CAMERA_CONFIG_TARGET_FPS_60);
++        ArSession_getSupportedCameraConfigsWithFilter(_session, camera_config_filter, all_camera_configs);
++        int32_t num_configs = 0;
++        ArCameraConfigList_getSize(_session, all_camera_configs, &num_configs);
++        if(num_configs==0)
++        {
++            ArCameraConfigFilter_setTargetFps(_session, camera_config_filter,AR_CAMERA_CONFIG_TARGET_FPS_30);
++            ArSession_getSupportedCameraConfigsWithFilter(_session, camera_config_filter, all_camera_configs);
++            ArCameraConfigList_getSize(_session, all_camera_configs, &num_configs);
++        }
++        std::vector<CameraConfig> camera_configs;
++        CameraConfig *cpu_high_resolution_camera_config_ptr = nullptr;
++        camera_configs.resize(num_configs);
++        for (int i = 0; i < num_configs; ++i) {
++            copyCameraConfig(_session, all_camera_configs, i,
++                             num_configs,
++                             &camera_configs[i]);
++        }
++        // Determine the resolution of the AR Camera
++        cpu_high_resolution_camera_config_ptr = nullptr;
++        if (camera_configs.empty()) {
++            return;
++        }
++        int high_resolution_config_idx = camera_configs.size()-1;
++        for (int i = 0; i < camera_configs.size(); ++i) {
++            int32_t image_height = camera_configs[i].height;
++            if (image_height >= 1080) {
++                high_resolution_config_idx = i;
++                break;
++            }
++        }
++        //pinfo("[Viro] ArCameraConfigList_getSize, height: %d and width : %d index value : %d", camera_configs[high_resolution_config_idx].height,camera_configs[high_resolution_config_idx].width,high_resolution_config_idx);
++        cpu_high_resolution_camera_config_ptr = &camera_configs[high_resolution_config_idx];
++        ArSession_setCameraConfig(_session, cpu_high_resolution_camera_config_ptr->config);
+     }
+ 
+     void SessionNative::setCameraTextureName(int32_t textureId) {
+Index: android/sharedCode/src/main/cpp/arcore/VROARSessionARCore.cpp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/android/sharedCode/src/main/cpp/arcore/VROARSessionARCore.cpp b/android/sharedCode/src/main/cpp/arcore/VROARSessionARCore.cpp
+--- a/android/sharedCode/src/main/cpp/arcore/VROARSessionARCore.cpp	(revision 751dbca82b02de8d0b398e1fd0505d278acf9ec7)
++++ b/android/sharedCode/src/main/cpp/arcore/VROARSessionARCore.cpp	(date 1639670681761)
+@@ -41,6 +41,7 @@
+ #include "VROARHitTestResult.h"
+ #include "VROFrameSynchronizer.h"
+ #include "VROCloudAnchorProviderARCore.h"
++#include "VROARCameraARCore.h"
+ 
+ static bool kDebugTracking = false;
+ 
+@@ -228,6 +229,58 @@
+     }
+ }
+ 
++VRO_OBJECT VROARSessionARCore::getARFrameImage() {
++    VRO_ENV env = VROPlatformGetJNIEnv();
++    int _bufferIndex = 0;
++    std::shared_ptr<VROData> _data[3];
++    jobject _buffers[3];
++    std::unique_ptr<VROARFrame> &frame = getLastFrame();
++    if (!frame) {
++        return nullptr;
++    }
++    pinfo("[Viro] Get Last Frame");
++    std::shared_ptr<VROARCameraARCore> camera = std::dynamic_pointer_cast<VROARCameraARCore>(frame->getCamera());
++    if (!camera) {
++        return nullptr;
++    }
++    pinfo("[Viro] Get Camera");
++    if (camera->getTrackingState() != VROARTrackingState::Normal) {
++        return nullptr;
++    }
++    pinfo("[Viro] Tracking state");
++//    int bufferIndex = _bufferIndex;
++//    _bufferIndex = (_bufferIndex + 1) % 3;
++//    int width=0;
++//    int height=0;
++    VROVector3f size = camera->getImageSize();
++    int width = (int) size.x;
++    int height = (int) size.y;
++    if (width <= 0 || height <= 0) {
++        pinfo("[Viro] Get not captured");
++        return nullptr;
++    }
++    pinfo("[Viro] Get image size");
++
++    int dataLength = width * height * 4;
++    uint8_t *data = (uint8_t *) malloc(dataLength);
++//    for ( int i = 0; i < 100; i++ )
++//    {
++//        data[ i ] = i;
++//    }
++//    _data[bufferIndex] = std::make_shared<VROData>(data, dataLength, VRODataOwnership::Move);
++    jobject buffer_w = env->NewDirectByteBuffer(data, dataLength);
++    camera->getImageData(data);
++//    VROPlatformCallHostObjectFunction(buffer_w, "rewind", "()Ljava/nio/Buffer;");
++//    VROPlatformCallHostObjectFunction(buffer_w, "limit", "(I)Ljava/nio/Buffer;", width * height * 4);
++    pinfo("[Viro] Buffer length");
++    float outFx, outFy, outCx, outCy;
++    camera->getImageIntrinsics(&outFx, &outFy, &outCx, &outCy);
++
++    //jobject buffer_w = VRO_NEW_WEAK_GLOBAL_REF(_buffers[bufferIndex]);
++    VRO_OBJECT ARImageData = VROPlatformConstructHostObject("com/viro/core/ARImageParams","(FFFFIILjava/nio/ByteBuffer;)V", outFx, outFy, outCx, outCy,width,height,buffer_w);
++    return ARImageData;
++}
++
+ bool VROARSessionARCore::configure(arcore::LightingMode lightingMode, arcore::PlaneFindingMode planeFindingMode,
+                                    arcore::UpdateMode updateMode, arcore::CloudAnchorMode cloudAnchorMode) {
+     _lightingMode = lightingMode;
+Index: android/sharedCode/src/main/java/com/viro/core/RendererARCore.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/android/sharedCode/src/main/java/com/viro/core/RendererARCore.java b/android/sharedCode/src/main/java/com/viro/core/RendererARCore.java
+--- a/android/sharedCode/src/main/java/com/viro/core/RendererARCore.java	(revision 751dbca82b02de8d0b398e1fd0505d278acf9ec7)
++++ b/android/sharedCode/src/main/java/com/viro/core/RendererARCore.java	(date 1639584175650)
+@@ -54,7 +54,10 @@
+         long sessionRef = nativeCreateARCoreSession(context);
+         nativeSetARCoreSession(mNativeRef, sessionRef);
+     }
+-
++    //get AR Frame Image
++    public ARImageParams getARFrameImage() {
++        return nativeGetARFrameImage(mNativeRef);
++    }
+     public void setARDisplayGeometry(int rotation, int width, int height) {
+         nativeSetARDisplayGeometry(mNativeRef, rotation, width, height);
+     }
+@@ -106,6 +109,7 @@
+                                                    AssetManager assets, PlatformUtil platformUtil,
+                                                    boolean enableShadows, boolean enableHDR, boolean enablePBR, boolean enableBloom);
+     private native void nativeSetARDisplayGeometry(long nativeRef, int rotation, int width, int height);
++    private native ARImageParams nativeGetARFrameImage(long nativeRef);
+     private native void nativeSetAnchorDetectionTypes(long nativeRef, String[] detectionTypes);
+     private native long nativeCreateARCoreSession(Context context);
+     private native void nativeSetARCoreSession(long nativeRef, long sessionRef);
+Index: android/sharedCode/src/main/cpp/arcore/VROARCameraARCore.cpp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/android/sharedCode/src/main/cpp/arcore/VROARCameraARCore.cpp b/android/sharedCode/src/main/cpp/arcore/VROARCameraARCore.cpp
+--- a/android/sharedCode/src/main/cpp/arcore/VROARCameraARCore.cpp	(revision 751dbca82b02de8d0b398e1fd0505d278acf9ec7)
++++ b/android/sharedCode/src/main/cpp/arcore/VROARCameraARCore.cpp	(date 1639660780682)
+@@ -24,6 +24,8 @@
+ //  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ //  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ 
++#include <VROInputControllerDaydream.h>
++#include <VROData.h>
+ #include "VROARCameraARCore.h"
+ #include "VROViewport.h"
+ #include "VROMath.h"
+@@ -35,7 +37,10 @@
+ #include "VROMatrix4f.h"
+ #include "VROARSessionARCore.h"
+ #include "VROYuvImageConverter.h"
+-
++#define pinfo(...) \
++    do { \
++        __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__); \
++    } while (0)
+ VROARCameraARCore::VROARCameraARCore(arcore::Frame *frame,
+                                      std::shared_ptr<VROARSessionARCore> session) :
+     _frame(frame),
+@@ -148,9 +153,8 @@
+ }
+ 
+ VROVector3f VROARCameraARCore::getImageSize() {
+-    return getCroppedImageSize();
++    return getRotatedImageSize();
+ }
+-
+ void VROARCameraARCore::getImageData(uint8_t *outImageData) {
+     if (!isImageDataAvailable()) {
+         return;
+@@ -159,16 +163,15 @@
+     if (!session) {
+         return;
+     }
+-
+-    VROVector3f rotatedImageSize = getRotatedImageSize();
+-    int rotatedImageDataLength = (int) rotatedImageSize.x * (int) rotatedImageSize.y * 4;
+-    uint8_t *rotatedImageData = session->getRotatedCameraImageData(rotatedImageDataLength);
++    //VROVector3f rotatedImageSize = getRotatedImageSize();
++    //int rotatedImageDataLength = (int) rotatedImageSize.x * (int) rotatedImageSize.y * 4;
++    //uint8_t *rotatedImageData = session->getRotatedCameraImageData(rotatedImageDataLength);
+ 
+     // Derive the rotated image data from the ARCore _image
+-    getRotatedImageData(rotatedImageData);
++    getRotatedImageData(outImageData);
+ 
+     // Crop the image to match the viewport
+-    cropImage(rotatedImageData, (int) rotatedImageSize.x, outImageData);
++    //cropImage(rotatedImageData, (int) rotatedImageSize.x, outImageData);
+ }
+ 
+ VROVector3f VROARCameraARCore::getRotatedImageSize() {
+@@ -357,5 +360,13 @@
+     int left, right, bottom, top;
+     getImageCropRectangle(session->getDisplayRotation(), session->getWidth(), session->getHeight(),
+                           &left, &right, &bottom, &top);
++    pinfo("getCroppedImageSize displayRotation : %d", session->getDisplayRotation());
++    pinfo("getCroppedImageSize getWidth : %d", session->getWidth());
++    pinfo("getCroppedImageSize getHeight : %d", session->getHeight());
++    pinfo("getCroppedImageSize left : %d", left);
++    pinfo("getCroppedImageSize right : %d", right);
++    pinfo("getCroppedImageSize bottom : %d", bottom);
++    pinfo("getCroppedImageSize top : %d", top);
++
+     return { (float) (right - left), (float) (bottom - top), 0 };
+ }
+\ No newline at end of file
+Index: android/sharedCode/src/main/cpp/VROSceneRendererARCore.cpp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/android/sharedCode/src/main/cpp/VROSceneRendererARCore.cpp b/android/sharedCode/src/main/cpp/VROSceneRendererARCore.cpp
+--- a/android/sharedCode/src/main/cpp/VROSceneRendererARCore.cpp	(revision 751dbca82b02de8d0b398e1fd0505d278acf9ec7)
++++ b/android/sharedCode/src/main/cpp/VROSceneRendererARCore.cpp	(date 1639630641593)
+@@ -400,6 +400,15 @@
+     _session->setDisplayGeometry((VROARDisplayRotation) rotation, width, height);
+ }
+ 
++VRO_OBJECT VROSceneRendererARCore::getARFrameImage() {
++    std::weak_ptr<VROARSessionARCore> session(_session);
++    std::shared_ptr<VROARSessionARCore> locked_session = session.lock();
++    if (!locked_session) {
++        return nullptr;
++    }
++    return locked_session->getARFrameImage();
++}
++
+ void VROSceneRendererARCore::setCameraAutoFocusEnabled(bool enabled) {
+     _session->setAutofocus(enabled);
+ }
+@@ -410,7 +419,6 @@
+ 
+ void VROSceneRendererARCore::setAnchorDetectionTypes(std::set<VROAnchorDetection> types) {
+     _detectionTypes = types;
+-
+     if (_sceneController) {
+         std::shared_ptr<VROARScene> scene = std::dynamic_pointer_cast<VROARScene>(_sceneController->getScene());
+         if (scene) {
+Index: android/sharedCode/src/main/cpp/jni/VRORendererARCore_JNI.cpp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/android/sharedCode/src/main/cpp/jni/VRORendererARCore_JNI.cpp b/android/sharedCode/src/main/cpp/jni/VRORendererARCore_JNI.cpp
+--- a/android/sharedCode/src/main/cpp/jni/VRORendererARCore_JNI.cpp	(revision 751dbca82b02de8d0b398e1fd0505d278acf9ec7)
++++ b/android/sharedCode/src/main/cpp/jni/VRORendererARCore_JNI.cpp	(date 1639470947142)
+@@ -34,7 +34,10 @@
+ #include "ViroContextAndroid_JNI.h"
+ #include "VROCameraImageListener.h"
+ #include "arcore/ARUtils_JNI.h"
+-
++#define pinfo(...) \
++    do { \
++        __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__); \
++    } while (0)
+ #if VRO_PLATFORM_ANDROID
+ #define VRO_METHOD(return_type, method_name) \
+   JNIEXPORT return_type JNICALL              \
+@@ -92,6 +95,13 @@
+     arRenderer->setDisplayGeometry(rotation, width, height);
+ }
+ 
++VRO_METHOD(VRO_OBJECT, nativeGetARFrameImage)(VRO_ARGS
++                                             jlong renderer_j) {
++    std::shared_ptr<VROSceneRenderer> renderer = Renderer::native(renderer_j);
++    std::shared_ptr<VROSceneRendererARCore> arRenderer = std::dynamic_pointer_cast<VROSceneRendererARCore>(renderer);
++    return arRenderer->getARFrameImage();
++}
++
+ VRO_METHOD(void, nativeSetAnchorDetectionTypes)(VRO_ARGS
+                                                 jlong renderer_j,
+                                                 VRO_STRING_ARRAY typeStrArray) {
+Index: android/sharedCode/src/main/java/com/viro/ARImageListener.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/android/sharedCode/src/main/java/com/viro/ARImageListener.java b/android/sharedCode/src/main/java/com/viro/ARImageListener.java
+new file mode 100644
+--- /dev/null	(date 1639585841215)
++++ b/android/sharedCode/src/main/java/com/viro/ARImageListener.java	(date 1639585841215)
+@@ -0,0 +1,45 @@
++//
++//  Copyright (c) 2017-present, ViroMedia, Inc.
++//  All rights reserved.
++//
++//  Permission is hereby granted, free of charge, to any person obtaining
++//  a copy of this software and associated documentation files (the
++//  "Software"), to deal in the Software without restriction, including
++//  without limitation the rights to use, copy, modify, merge, publish,
++//  distribute, sublicense, and/or sell copies of the Software, and to
++//  permit persons to whom the Software is furnished to do so, subject to
++//  the following conditions:
++//
++//  The above copyright notice and this permission notice shall be included
++//  in all copies or substantial portions of the Software.
++//
++//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++//  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
++//  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
++//  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
++//  CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
++//  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
++//  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
++
++package com.viro;
++
++import com.viro.core.ARHitTestResult;
++import com.viro.core.ARImageParams;
++import com.viro.core.ARScene;
++import com.viro.core.ViroViewARCore;
++
++/**
++ * Callback interface for responding to AR hit-test results. These hit-tests are initiated
++ * through the {@link ViroViewARCore}. Hit-tests are used to search the {@link ARScene} for
++ * real-world objects.
++ */
++public interface ARImageListener {
++
++    /**
++     * Invoked when an AR hit-test has completed. As each hit-test can intersect with multiple
++     * real-world objects, an array of results is returned.
++     *
++     * @param results The results of the hit-test, each in an {@link ARHitTestResult}.
++     */
++    void onARImageCaptured(ARImageParams arimageparams);
++}
+Index: android/sharedCode/src/main/java/com/viro/core/ViroViewARCore.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/android/sharedCode/src/main/java/com/viro/core/ViroViewARCore.java b/android/sharedCode/src/main/java/com/viro/core/ViroViewARCore.java
+--- a/android/sharedCode/src/main/java/com/viro/core/ViroViewARCore.java	(revision 751dbca82b02de8d0b398e1fd0505d278acf9ec7)
++++ b/android/sharedCode/src/main/java/com/viro/core/ViroViewARCore.java	(date 1639642886027)
+@@ -49,11 +49,11 @@
+ 
+ import com.google.ar.core.ArCoreApk;
+ import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException;
++import com.viro.ARImageListener;
+ import com.viro.core.internal.ViroTouchGestureListener;
+ import com.viro.core.internal.CameraPermissionHelper;
+ import com.viro.core.internal.GLSurfaceViewQueue;
+ import com.viro.core.internal.PlatformUtil;
+-import com.viro.renderer.BuildConfig;
+ 
+ import java.lang.ref.WeakReference;
+ import java.util.ArrayList;
+@@ -401,6 +401,7 @@
+     private ViroMediaRecorder mMediaRecorder;
+     private StartupListener mStartupListener;
+     private CameraImageListener mCameraImageListener;
++    private ARImageListener mARImageListener;
+ 
+     // The renderer start listener is invoked when these are all true
+     private AtomicBoolean mRendererSurfaceInitialized = new AtomicBoolean(false);
+@@ -1000,6 +1001,7 @@
+      *
+      * @param rotation The rotation constant for the background camera view.
+      */
++
+     public void setCameraRotation(int rotation) {
+         mRotation = rotation;
+         ((RendererARCore) mNativeRenderer).setARDisplayGeometry(mRotation, mWidth, mHeight);
+@@ -1040,10 +1042,17 @@
+      * Install a {@link CameraImageListener} which will be invoked each frame as the AR camera
+      * image is updated. This can be used to perform additional processing on the real-world
+      * images before they are rendered to the device.
+-     *
+-     * @param context The {@link ViroContext} is required to set an image listener.
+      * @param listener The {@link CameraImageListener} to install.
+      */
++
++    public void getARFrameImage(ARImageListener listener) {
++        mSurfaceView.queueEvent(()->{
++            mARImageListener = listener;
++            ARImageParams params=((RendererARCore) mNativeRenderer).getARFrameImage();
++            new Thread(() -> listener.onARImageCaptured(params)).start();
++        });
++    }
++
+     public void setCameraImageListener(ViroContext context, CameraImageListener listener) {
+         mCameraImageListener = listener;
+         ((RendererARCore) mNativeRenderer).setCameraImageListener(context, listener);
+Index: android/sharedCode/src/main/java/com/viro/core/ARImageParams.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/android/sharedCode/src/main/java/com/viro/core/ARImageParams.java b/android/sharedCode/src/main/java/com/viro/core/ARImageParams.java
+new file mode 100644
+--- /dev/null	(date 1639627663762)
++++ b/android/sharedCode/src/main/java/com/viro/core/ARImageParams.java	(date 1639627663762)
+@@ -0,0 +1,65 @@
++//
++//  Copyright (c) 2017-present, ViroMedia, Inc.
++//  All rights reserved.
++//
++//  Permission is hereby granted, free of charge, to any person obtaining
++//  a copy of this software and associated documentation files (the
++//  "Software"), to deal in the Software without restriction, including
++//  without limitation the rights to use, copy, modify, merge, publish,
++//  distribute, sublicense, and/or sell copies of the Software, and to
++//  permit persons to whom the Software is furnished to do so, subject to
++//  the following conditions:
++//
++//  The above copyright notice and this permission notice shall be included
++//  in all copies or substantial portions of the Software.
++//
++//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++//  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
++//  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
++//  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
++//  CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
++//  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
++//  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
++
++package com.viro.core;
++
++import java.nio.ByteBuffer;
++
++/**
++ * CameraIntrinsics define the physical characteristics of the device camera using a "pinhole"
++ * model.
++ */
++public class ARImageParams {
++    private float[] mFocalLength;
++    private float[] mPrincipalPoint;
++    private int width;
++    private int height;
++    private ByteBuffer buffer;
++
++    /**
++     * Invoked from JNI
++     * @hide
++     */
++    public ARImageParams(float fx, float fy, float cx, float cy,int height,int width, ByteBuffer buffer) {
++        this.mFocalLength = new float[]{fx, fy};
++        this.mPrincipalPoint = new float[]{cx, cy};
++        this.width = width;
++        this.height = height;
++        this.buffer = buffer;
++    }
++    public float[] getFocalLength() {
++        return mFocalLength;
++    }
++    public float[] getPrincipalPoint() {
++        return mPrincipalPoint;
++    }
++    public int getWidth() {
++        return width;
++    }
++    public int getHeight() {
++        return height;
++    }
++    public ByteBuffer getBuffer() {
++        return buffer;
++    }
++}
+Index: android/sharedCode/src/main/cpp/VROSceneRendererARCore.h
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/android/sharedCode/src/main/cpp/VROSceneRendererARCore.h b/android/sharedCode/src/main/cpp/VROSceneRendererARCore.h
+--- a/android/sharedCode/src/main/cpp/VROSceneRendererARCore.h	(revision 751dbca82b02de8d0b398e1fd0505d278acf9ec7)
++++ b/android/sharedCode/src/main/cpp/VROSceneRendererARCore.h	(date 1639471118663)
+@@ -146,6 +146,8 @@
+      */
+     void enableTracking(bool shouldTrack);
+ 
++    VRO_OBJECT getARFrameImage();
++
+ private:
+ 
+     void renderFrame();
+@@ -167,6 +169,7 @@
+ 
+     std::shared_ptr<VRONode> _pointOfView;
+     std::shared_ptr<VROARSessionARCore> _session;
++
+ };
+ 
+ #endif  // VRO_SCENE_RENDERER_ARCORE_H  // NOLINT
+Index: android/sharedCode/src/main/cpp/arcore/VROARSessionARCore.h
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/android/sharedCode/src/main/cpp/arcore/VROARSessionARCore.h b/android/sharedCode/src/main/cpp/arcore/VROARSessionARCore.h
+--- a/android/sharedCode/src/main/cpp/arcore/VROARSessionARCore.h	(revision 751dbca82b02de8d0b398e1fd0505d278acf9ec7)
++++ b/android/sharedCode/src/main/cpp/arcore/VROARSessionARCore.h	(date 1639475879695)
+@@ -163,6 +163,8 @@
+     std::string getKeyForTrackable(arcore::Trackable *trackable);
+     std::shared_ptr<VROARAnchorARCore> getAnchorForTrackable(arcore::Trackable *trackable);
+ 
++    VRO_OBJECT getARFrameImage();
++
+ private:
+ 
+     /*

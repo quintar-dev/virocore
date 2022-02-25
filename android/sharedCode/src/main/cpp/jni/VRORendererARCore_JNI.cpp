@@ -34,7 +34,10 @@
 #include "ViroContextAndroid_JNI.h"
 #include "VROCameraImageListener.h"
 #include "arcore/ARUtils_JNI.h"
-
+#define pinfo(...) \
+    do { \
+        __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__); \
+    } while (0)
 #if VRO_PLATFORM_ANDROID
 #define VRO_METHOD(return_type, method_name) \
   JNIEXPORT return_type JNICALL              \
@@ -90,6 +93,30 @@ VRO_METHOD(void, nativeSetARDisplayGeometry)(VRO_ARGS
     std::shared_ptr<VROSceneRenderer> renderer = Renderer::native(renderer_j);
     std::shared_ptr<VROSceneRendererARCore> arRenderer = std::dynamic_pointer_cast<VROSceneRendererARCore>(renderer);
     arRenderer->setDisplayGeometry(rotation, width, height);
+}
+
+VRO_METHOD(VRO_OBJECT_ARRAY, nativeGetCameraConfig)(VRO_ARGS
+                                             jlong renderer_j) {
+    std::shared_ptr<VROSceneRenderer> renderer = Renderer::native(renderer_j);
+    std::shared_ptr<VROSceneRendererARCore> arRenderer = std::dynamic_pointer_cast<VROSceneRendererARCore>(renderer);
+    return arRenderer->getCameraConfig();
+}
+
+VRO_METHOD(void, nativeSetCameraConfig)(VRO_ARGS
+                                                    jlong renderer_j,
+                                                    jint fps,
+                                                    jint width,
+                                                    jint height) {
+    std::shared_ptr<VROSceneRenderer> renderer = Renderer::native(renderer_j);
+    std::shared_ptr<VROSceneRendererARCore> arRenderer = std::dynamic_pointer_cast<VROSceneRendererARCore>(renderer);
+    arRenderer->setCameraConfig(fps,width,height);
+}
+
+VRO_METHOD(VRO_OBJECT, nativeGetARFrameImage)(VRO_ARGS
+                                             jlong renderer_j) {
+    std::shared_ptr<VROSceneRenderer> renderer = Renderer::native(renderer_j);
+    std::shared_ptr<VROSceneRendererARCore> arRenderer = std::dynamic_pointer_cast<VROSceneRendererARCore>(renderer);
+    return arRenderer->getARFrameImage();
 }
 
 VRO_METHOD(void, nativeSetAnchorDetectionTypes)(VRO_ARGS

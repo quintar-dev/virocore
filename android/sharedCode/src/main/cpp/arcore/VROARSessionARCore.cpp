@@ -38,9 +38,12 @@
 #include "VROStringUtil.h"
 #include "VROARImageTargetAndroid.h"
 #include <VROImageAndroid.h>
+#include <ViroUtils_JNI.h>
+#include <Camera_JNI.h>
 #include "VROARHitTestResult.h"
 #include "VROFrameSynchronizer.h"
 #include "VROCloudAnchorProviderARCore.h"
+#include "VROARCameraARCore.h"
 
 static bool kDebugTracking = false;
 
@@ -226,6 +229,90 @@ void VROARSessionARCore::setDisplayGeometry(VROARDisplayRotation rotation, int w
     if (_session) {
         _session->setDisplayGeometry((int) rotation, width, height);
     }
+}
+
+VRO_OBJECT_ARRAY VROARSessionARCore::getCameraConfig() {
+    VRO_ENV env = VROPlatformGetJNIEnv();
+    if (_session) {
+        int * array= _session->getCameraConfig();
+        int config_size = array[0]-1;
+        int config_count = config_size/3;
+        VRO_OBJECT_ARRAY CameraConfigArray = VRO_NEW_OBJECT_ARRAY(config_count, "com/viro/core/CameraConfigValues");
+        for(int camera_config_index=0;camera_config_index<config_count;camera_config_index++)
+        {
+            int base_pointer= camera_config_index*3;
+            VRO_OBJECT CameraConfig = VROPlatformConstructHostObject("com/viro/core/CameraConfigValues","(III)V", array[base_pointer+1], array[base_pointer+2], array[base_pointer+3]);
+            VRO_ARRAY_SET(CameraConfigArray, camera_config_index, CameraConfig);
+            VRO_DELETE_LOCAL_REF(CameraConfig);
+        }
+        return CameraConfigArray;
+    }
+}
+
+void VROARSessionARCore::setCameraConfig(int fps,int width,int height) {
+    if (_session) {
+        _session->setCameraConfig(fps,width,height);
+    }
+}
+
+VRO_OBJECT VROARSessionARCore::getARFrameImage() {
+    VRO_ENV env = VROPlatformGetJNIEnv();
+    std::unique_ptr<VROARFrame> &frame = getLastFrame();
+    if (!frame) {
+        return nullptr;
+    }
+    std::shared_ptr<VROARCameraARCore> camera = std::dynamic_pointer_cast<VROARCameraARCore>(frame->getCamera());
+    if (!camera) {
+        return nullptr;
+    }
+    if (camera->getTrackingState() != VROARTrackingState::Normal) {
+        return nullptr;
+    }
+
+    //finding width and height of the frame
+    VROVector3f size = camera->getImageSize();
+    int width = (int) size.x;
+    int height = (int) size.y;
+    if (width <= 0 || height <= 0) {
+        return nullptr;
+    }
+
+    //create image buffer
+    int dataLength = width * height * 4;
+    if (!_data || _data->getDataLength() < dataLength) {
+        uint8_t *data = (uint8_t *) malloc(dataLength);
+        _data = std::make_shared<VROData>(data, dataLength, VRODataOwnership::Move);
+        buffer = VRO_NEW_GLOBAL_REF(env->NewDirectByteBuffer(data, dataLength));
+    }
+
+    //get image data
+    camera->getImageData((uint8_t *) _data->getData());
+    jobject buffer_w = VRO_NEW_WEAK_GLOBAL_REF(buffer);
+
+    //get camera position
+    VROVector3f computed_position = camera->getPosition();
+
+    //get camera rotation
+    VROMatrix4f computed_rotation = camera->getRotation();
+
+    //apply position values to rotation matrix in 12,13,14 positions
+    computed_rotation.translate(computed_position.x,computed_position.y,computed_position.z);
+
+    //creating jfloatarray and pass translation applied rotation matrix values to that
+    VRO_FLOAT_ARRAY translation_applied_rotation_array = VRO_NEW_FLOAT_ARRAY(16);
+    float temp_array[16];
+    for(int j=0;j<16;j++)
+    {
+        temp_array[j] = computed_rotation[j];
+    }
+    VRO_FLOAT_ARRAY_SET(translation_applied_rotation_array, 0, 16, temp_array);
+    float outFx, outFy, outCx, outCy;
+
+    //get image intrinsic values
+    camera->getImageIntrinsics(&outFx, &outFy, &outCx, &outCy);
+
+    VRO_OBJECT ARImageData = VROPlatformConstructHostObject("com/viro/core/ARImageParams","(FFFFIILjava/nio/ByteBuffer;[F)V", outFx, outFy, outCx, outCy,width,height,buffer_w,translation_applied_rotation_array);
+    return ARImageData;
 }
 
 bool VROARSessionARCore::configure(arcore::LightingMode lightingMode, arcore::PlaneFindingMode planeFindingMode,

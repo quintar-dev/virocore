@@ -602,12 +602,12 @@ public class ViroActivity extends AppCompatActivity {
 
     private void testCameraImageCapture(final ARScene scene) {
         ((ViroViewARCore) mViroView).setCameraImageListener(mViroView.getViroContext(), new TestCameraImageListener());
-        //mHandler.postDelayed(new Runnable() {
-        //    @Override
-        //    public void run() {
-        //         ((ViroViewARCore) mViroView).setCameraImageListener(mViroView.getViroContext(), null);
-        //    }
-        //}, 5000);
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                 ((ViroViewARCore) mViroView).setCameraImageListener(mViroView.getViroContext(), null);
+            }
+        }, 5000);
     }
 
     private void testBackgroundImage(final Scene scene) {

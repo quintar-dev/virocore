@@ -55,5 +55,4 @@ public interface CameraImageListener {
      *                   physical characteristics.
      */
     public void onCameraImageUpdated(ByteBuffer buffer, int width, int height, CameraIntrinsics intrinsics);
-
 }

@@ -146,6 +146,12 @@ public:
      */
     void enableTracking(bool shouldTrack);
 
+    VRO_OBJECT getARFrameImage();
+
+    jobjectArray getCameraConfig();
+
+    void setCameraConfig(jint fps, jint width, jint height);
+
 private:
 
     void renderFrame();
@@ -167,6 +173,7 @@ private:
 
     std::shared_ptr<VRONode> _pointOfView;
     std::shared_ptr<VROARSessionARCore> _session;
+
 };
 
 #endif  // VRO_SCENE_RENDERER_ARCORE_H  // NOLINT

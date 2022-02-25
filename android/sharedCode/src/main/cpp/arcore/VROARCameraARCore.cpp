@@ -24,6 +24,8 @@
 //  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 //  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#include <VROInputControllerDaydream.h>
+#include <VROData.h>
 #include "VROARCameraARCore.h"
 #include "VROViewport.h"
 #include "VROMath.h"
@@ -35,7 +37,10 @@
 #include "VROMatrix4f.h"
 #include "VROARSessionARCore.h"
 #include "VROYuvImageConverter.h"
-
+#define pinfo(...) \
+    do { \
+        __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__); \
+    } while (0)
 VROARCameraARCore::VROARCameraARCore(arcore::Frame *frame,
                                      std::shared_ptr<VROARSessionARCore> session) :
     _frame(frame),
@@ -148,9 +153,8 @@ bool VROARCameraARCore::isImageDataAvailable() {
 }
 
 VROVector3f VROARCameraARCore::getImageSize() {
-    return getCroppedImageSize();
+    return getRotatedImageSize();
 }
-
 void VROARCameraARCore::getImageData(uint8_t *outImageData) {
     if (!isImageDataAvailable()) {
         return;
@@ -159,16 +163,15 @@ void VROARCameraARCore::getImageData(uint8_t *outImageData) {
     if (!session) {
         return;
     }
-
-    VROVector3f rotatedImageSize = getRotatedImageSize();
-    int rotatedImageDataLength = (int) rotatedImageSize.x * (int) rotatedImageSize.y * 4;
-    uint8_t *rotatedImageData = session->getRotatedCameraImageData(rotatedImageDataLength);
+    //VROVector3f rotatedImageSize = getRotatedImageSize();
+    //int rotatedImageDataLength = (int) rotatedImageSize.x * (int) rotatedImageSize.y * 4;
+    //uint8_t *rotatedImageData = session->getRotatedCameraImageData(rotatedImageDataLength);
 
     // Derive the rotated image data from the ARCore _image
-    getRotatedImageData(rotatedImageData);
+    getRotatedImageData(outImageData);
 
     // Crop the image to match the viewport
-    cropImage(rotatedImageData, (int) rotatedImageSize.x, outImageData);
+    //cropImage(rotatedImageData, (int) rotatedImageSize.x, outImageData);
 }
 
 VROVector3f VROARCameraARCore::getRotatedImageSize() {
@@ -357,5 +360,13 @@ VROVector3f VROARCameraARCore::getCroppedImageSize() {
     int left, right, bottom, top;
     getImageCropRectangle(session->getDisplayRotation(), session->getWidth(), session->getHeight(),
                           &left, &right, &bottom, &top);
+    pinfo("getCroppedImageSize displayRotation : %d", session->getDisplayRotation());
+    pinfo("getCroppedImageSize getWidth : %d", session->getWidth());
+    pinfo("getCroppedImageSize getHeight : %d", session->getHeight());
+    pinfo("getCroppedImageSize left : %d", left);
+    pinfo("getCroppedImageSize right : %d", right);
+    pinfo("getCroppedImageSize bottom : %d", bottom);
+    pinfo("getCroppedImageSize top : %d", top);
+
     return { (float) (right - left), (float) (bottom - top), 0 };
 }

@@ -48,12 +48,13 @@ import android.view.View;
 import android.widget.ImageView;
 
 import com.google.ar.core.ArCoreApk;
+import com.google.ar.core.CameraConfig;
 import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException;
+import com.viro.ARImageListener;
 import com.viro.core.internal.ViroTouchGestureListener;
 import com.viro.core.internal.CameraPermissionHelper;
 import com.viro.core.internal.GLSurfaceViewQueue;
 import com.viro.core.internal.PlatformUtil;
-import com.viro.renderer.BuildConfig;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -401,6 +402,7 @@ public class ViroViewARCore extends ViroView {
     private ViroMediaRecorder mMediaRecorder;
     private StartupListener mStartupListener;
     private CameraImageListener mCameraImageListener;
+    private ARImageListener mARImageListener;
 
     // The renderer start listener is invoked when these are all true
     private AtomicBoolean mRendererSurfaceInitialized = new AtomicBoolean(false);
@@ -1000,9 +1002,24 @@ public class ViroViewARCore extends ViroView {
      *
      * @param rotation The rotation constant for the background camera view.
      */
+
     public void setCameraRotation(int rotation) {
         mRotation = rotation;
         ((RendererARCore) mNativeRenderer).setARDisplayGeometry(mRotation, mWidth, mHeight);
+    }
+
+    /**
+     * To get camera configuration
+     */
+    public CameraConfigValues[] getCameraConfig() {
+        return ((RendererARCore) mNativeRenderer).getCameraConfig();
+    }
+
+    /**
+     * To set camera configuration
+     */
+    public void setCameraConfiguration(CameraConfigValues cameraConfigValues) {
+        ((RendererARCore) mNativeRenderer).setCameraConfig(cameraConfigValues);
     }
 
     /**
@@ -1040,10 +1057,17 @@ public class ViroViewARCore extends ViroView {
      * Install a {@link CameraImageListener} which will be invoked each frame as the AR camera
      * image is updated. This can be used to perform additional processing on the real-world
      * images before they are rendered to the device.
-     *
-     * @param context The {@link ViroContext} is required to set an image listener.
      * @param listener The {@link CameraImageListener} to install.
      */
+
+    public void getARFrameImage(ARImageListener listener) {
+        mSurfaceView.queueEvent(()->{
+            mARImageListener = listener;
+            ARImageParams params=((RendererARCore) mNativeRenderer).getARFrameImage();
+            new Thread(() -> listener.onARImageCaptured(params)).start();
+        });
+    }
+
     public void setCameraImageListener(ViroContext context, CameraImageListener listener) {
         mCameraImageListener = listener;
         ((RendererARCore) mNativeRenderer).setCameraImageListener(context, listener);

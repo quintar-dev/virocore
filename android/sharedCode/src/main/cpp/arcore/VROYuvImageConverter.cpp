@@ -102,7 +102,8 @@ void VROYuvImageConverter::convertImage(arcore::Image *image, uint8_t *data) {
     }
 }
 
-void VROYuvImageConverter::convertImage90(arcore::Image *image, uint8_t *data) {
+void VROYuvImageConverter::
+convertImage90(arcore::Image *image, uint8_t *data) {
     int left, right, bottom, top;
     image->getCropRect(&left, &right, &bottom, &top);
 

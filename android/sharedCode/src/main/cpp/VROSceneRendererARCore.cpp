@@ -400,6 +400,25 @@ void VROSceneRendererARCore::setDisplayGeometry(int rotation, int width, int hei
     _session->setDisplayGeometry((VROARDisplayRotation) rotation, width, height);
 }
 
+VRO_OBJECT_ARRAY VROSceneRendererARCore::getCameraConfig() {
+    return _session->getCameraConfig();
+}
+
+void VROSceneRendererARCore::setCameraConfig(int fps,int width,int height) {
+    _session->pause();
+    _session->setCameraConfig(fps,width,height);
+    _session->run();
+}
+
+VRO_OBJECT VROSceneRendererARCore::getARFrameImage() {
+    std::weak_ptr<VROARSessionARCore> session(_session);
+    std::shared_ptr<VROARSessionARCore> locked_session = session.lock();
+    if (!locked_session) {
+        return nullptr;
+    }
+    return locked_session-> getARFrameImage();
+}
+
 void VROSceneRendererARCore::setCameraAutoFocusEnabled(bool enabled) {
     _session->setAutofocus(enabled);
 }
@@ -410,7 +429,6 @@ bool VROSceneRendererARCore::isCameraAutoFocusEnabled() {
 
 void VROSceneRendererARCore::setAnchorDetectionTypes(std::set<VROAnchorDetection> types) {
     _detectionTypes = types;
-
     if (_sceneController) {
         std::shared_ptr<VROARScene> scene = std::dynamic_pointer_cast<VROARScene>(_sceneController->getScene());
         if (scene) {

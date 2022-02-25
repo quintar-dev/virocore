@@ -20,6 +20,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.app.Dialog
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
@@ -66,6 +67,14 @@ class ViroActivity : Activity() {
                 showSnackbar("Error initializing [$errorMessage]")
             }
         })
+        viroView.verticalScrollbarPosition
+        (viroView as ViroViewARCore).setCameraImageListener(viroView?.viroContext
+        ) { buffer, width, height, intrinsics ->
+            Log.d("Test", "Width :"+width)
+            Log.d("Test", "Height :"+height)
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            bitmap.copyPixelsFromBuffer(buffer.position(0))
+        }
         setContentView(viroView)
     }
 

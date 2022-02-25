@@ -163,12 +163,21 @@ public:
     std::string getKeyForTrackable(arcore::Trackable *trackable);
     std::shared_ptr<VROARAnchorARCore> getAnchorForTrackable(arcore::Trackable *trackable);
 
+    VRO_OBJECT getARFrameImage();
+    jobjectArray getCameraConfig();
+
+    void setCameraConfig(int fps, int width, int height);
+
 private:
 
     /*
      The ARCore session.
      */
     arcore::Session *_session;
+
+    //for getting image data
+    std::shared_ptr<VROData> _data;
+    jobject buffer;
 
     /*
      Per frame handling.

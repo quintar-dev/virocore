@@ -489,7 +489,7 @@ public class Node implements EventDelegate.EventDelegateCallback {
 
     /**
      * Set the position of this Node. The position defines the Node's location within the coordinate
-     * system of its parent. The default position is (0, 0, 0): the origin of the parent node’s
+     * system of its parent. The default position is (0, 0, 0): the origin of the parent node???s
      * coordinate system.
      *
      * @param position The position as a {@link Vector}.
@@ -932,9 +932,9 @@ public class Node implements EventDelegate.EventDelegateCallback {
      * @param hierarchicalRendering
      */
     //#IFDEF 'viro_react'
-    public void setHierarchicalRendering(boolean hierarchicalRendering) {
-        nativeSetHierarchicalRendering(mNativeRef, hierarchicalRendering);
-    }
+    //public void setHierarchicalRendering(boolean hierarchicalRendering) {
+        //nativeSetHierarchicalRendering(mNativeRef, hierarchicalRendering);
+    //}
     //#ENDIF
 
     /**
@@ -1733,13 +1733,13 @@ public class Node implements EventDelegate.EventDelegateCallback {
      * @hide
      */
     //#IFDEF 'viro_react'
-    @Override
-    public void onCameraTransformUpdate(float posX, float poxY, float posZ,
-                                        float rotEulerX, float rotEulerY, float rotEulerZ,
-                                        float forwardX, float forwardY, float forwardZ,
-                                        float upX, float upY, float upZ) {
+    //@Override
+    //public void onCameraTransformUpdate(float posX, float poxY, float posZ,
+                                        //float rotEulerX, float rotEulerY, float rotEulerZ,
+                                        //float forwardX, float forwardY, float forwardZ,
+                                        //float upX, float upY, float upZ) {
         // no-op - used by VRTARScene only
-    }
+    //}
     //#ENDIF
 
  // +---------------------------------------------------------------------------+

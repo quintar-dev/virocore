@@ -25,7 +25,7 @@
 #include "arcore/VROARCameraARCore.h"
 #include "VROPlatformUtil.h"
 #include "VROSceneRendererARCore.h"
-#include "VROSceneController.h"
+//#include "VROSceneController.h"
 
 // +---------------------------------------------------------------------------+
 // | Camera Image Frame Listener
@@ -65,6 +65,7 @@ void VROCameraImageFrameListener::onFrameWillRender(const VRORenderContext &cont
     }
     int bufferIndex = _bufferIndex;
     _bufferIndex = (_bufferIndex + 1) % 3;
+
 
     VROVector3f size = camera->getImageSize();
     int width = (int) size.x;

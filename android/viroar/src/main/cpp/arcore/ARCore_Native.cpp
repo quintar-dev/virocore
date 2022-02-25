@@ -10,6 +10,8 @@
 #include <media/NdkImage.h>
 #include <media/NdkImageReader.h>
 #include <android/log.h>
+#include <string>
+#include <vector>
 
 #ifndef LOG_TAG
 #define LOG_TAG "Viro"
@@ -755,6 +757,129 @@ namespace arcore {
             return ConfigStatus::SessionNotPaused;
         }
         return ConfigStatus::UnsupportedConfiguration;
+    }
+    struct CameraConfig {
+        int32_t width = 0;
+        int32_t height = 0;
+        std::string config_label;
+        ArCameraConfig* config = nullptr;
+    };
+    void copyCameraConfig(
+            const ArSession* ar_session, const ArCameraConfigList* all_configs,
+            int index, int num_configs, CameraConfig* camera_config) {
+        if (camera_config != nullptr && index >= 0 && index < num_configs) {
+            ArCameraConfig_create(ar_session, &camera_config->config);
+            ArCameraConfigList_getItem(ar_session, all_configs, index,
+                                       camera_config->config);
+            ArCameraConfig_getImageDimensions(ar_session, camera_config->config,
+                                              &camera_config->width,
+                                              &camera_config->height);
+            camera_config->config_label = "(" + std::to_string(camera_config->width) +
+                                          "x" + std::to_string(camera_config->height) +
+                                          ")";
+        }
+    }
+
+    int *
+    SessionNative::getCameraConfig() {
+        int32_t thirty_fps_config_size = 0;
+        int32_t sixty_fps_config_size = 0;
+
+        ArCameraConfigList *thirty_camera_configs = nullptr;
+        ArCameraConfigList_create(_session, &thirty_camera_configs);
+        ArCameraConfigList *sixty_camera_configs = nullptr;
+        ArCameraConfigList_create(_session, &sixty_camera_configs);
+
+        ArCameraConfigFilter *camera_config_filter = nullptr;
+        ArCameraConfigFilter_create(_session, &camera_config_filter);
+
+        //getting thirty fps configs
+        ArCameraConfigFilter_setTargetFps(_session, camera_config_filter,AR_CAMERA_CONFIG_TARGET_FPS_30);
+        ArSession_getSupportedCameraConfigsWithFilter(_session, camera_config_filter, thirty_camera_configs);
+        ArCameraConfigList_getSize(_session, thirty_camera_configs, &thirty_fps_config_size);
+
+        //getting sixty fps configs
+        ArCameraConfigFilter_setTargetFps(_session, camera_config_filter,AR_CAMERA_CONFIG_TARGET_FPS_60);
+        ArSession_getSupportedCameraConfigsWithFilter(_session, camera_config_filter, sixty_camera_configs);
+        ArCameraConfigList_getSize(_session, sixty_camera_configs, &sixty_fps_config_size);
+
+        std::vector<CameraConfig> thirty_fs_camera_configs;
+        thirty_fs_camera_configs.resize(thirty_fps_config_size);
+        for (int thirty_camera_config_index = 0; thirty_camera_config_index < thirty_fps_config_size; ++thirty_camera_config_index) {
+            copyCameraConfig(_session, thirty_camera_configs, thirty_camera_config_index,
+                             thirty_fps_config_size,
+                             &thirty_fs_camera_configs[thirty_camera_config_index]);
+        }
+
+        std::vector<CameraConfig> sixty_fs_camera_configs;
+        sixty_fs_camera_configs.resize(sixty_fps_config_size);
+        for (int sixty_camera_config_index = 0; sixty_camera_config_index < thirty_fps_config_size; ++sixty_camera_config_index) {
+            copyCameraConfig(_session, sixty_camera_configs, sixty_camera_config_index,
+                             sixty_fps_config_size,
+                             &sixty_fs_camera_configs[sixty_camera_config_index]);
+        }
+
+        int total_config_size = (thirty_fps_config_size+sixty_fps_config_size)*3;
+        int *config_array=new int[total_config_size+1];
+        config_array[0] = total_config_size+1;
+        for(int thirty_camera_config_index=0;thirty_camera_config_index<thirty_fps_config_size;thirty_camera_config_index++)
+        {
+            int framerate_position=(thirty_camera_config_index*3)+1;
+            config_array[framerate_position] = 30;
+            int height_position=(thirty_camera_config_index*3)+2;
+            config_array[height_position] = thirty_fs_camera_configs[thirty_camera_config_index].height;
+            int width_position=(thirty_camera_config_index*3)+3;
+            config_array[width_position] = thirty_fs_camera_configs[thirty_camera_config_index].width;
+        }
+        int thirty_fps_config_totl_size = thirty_fps_config_size*3;
+        for(int sixty_camera_config_index=0;sixty_camera_config_index<sixty_fps_config_size;sixty_camera_config_index++)
+        {
+            int framerate_position=(sixty_camera_config_index*3)+1+thirty_fps_config_totl_size;
+            config_array[framerate_position] = 60;
+            int height_position=(sixty_camera_config_index*3)+2+thirty_fps_config_totl_size;
+            config_array[height_position] = sixty_fs_camera_configs[sixty_camera_config_index].height;
+            int width_position=(sixty_camera_config_index*3)+3+thirty_fps_config_totl_size;
+            config_array[width_position] = sixty_fs_camera_configs[sixty_camera_config_index].width;
+        }
+        return config_array;
+    }
+
+    void
+    SessionNative::setCameraConfig(int fps,int width, int height) {
+        ArCameraConfigList *all_camera_configs = nullptr;
+        ArCameraConfigList_create(_session, &all_camera_configs);
+        ArCameraConfigFilter *camera_config_filter = nullptr;
+        ArCameraConfigFilter_create(_session, &camera_config_filter);
+        if(fps==30)
+        {
+            ArCameraConfigFilter_setTargetFps(_session, camera_config_filter,AR_CAMERA_CONFIG_TARGET_FPS_30);
+        }
+        else if(fps==60)
+        {
+            ArCameraConfigFilter_setTargetFps(_session, camera_config_filter,AR_CAMERA_CONFIG_TARGET_FPS_60);
+        }
+        ArSession_getSupportedCameraConfigsWithFilter(_session, camera_config_filter, all_camera_configs);
+        int32_t num_configs = 0;
+        ArCameraConfigList_getSize(_session, all_camera_configs, &num_configs);
+        std::vector<CameraConfig> camera_configs;
+        CameraConfig *cpu_high_resolution_camera_config_ptr = nullptr;
+        camera_configs.resize(num_configs);
+        for (int camera_config_index = 0; camera_config_index < num_configs; ++camera_config_index) {
+            copyCameraConfig(_session, all_camera_configs, camera_config_index,
+                             num_configs,
+                             &camera_configs[camera_config_index]);
+        }
+        // Determine the resolution of the AR Camera
+        cpu_high_resolution_camera_config_ptr = nullptr;
+        for (int camera_config_index = 0; camera_config_index < camera_configs.size(); ++camera_config_index) {
+            int image_height = camera_configs[camera_config_index].height;
+            int image_width = camera_configs[camera_config_index].width;
+            if (image_height == height && image_width == width) {
+                cpu_high_resolution_camera_config_ptr = &camera_configs[camera_config_index];
+                ArSession_setCameraConfig(_session, cpu_high_resolution_camera_config_ptr->config);
+                break;
+            }
+        }
     }
 
     void

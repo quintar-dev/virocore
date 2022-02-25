@@ -40,7 +40,6 @@ public:
     virtual ~VROARFrameARCore();
     
     double getTimestamp() const;
-    
     const std::shared_ptr<VROARCamera> &getCamera() const;
     VROCameraOrientation getOrientation() const {
         return VROCameraOrientation::Portrait;
@@ -70,7 +69,6 @@ private:
     VROViewport _viewport;
     std::vector<std::shared_ptr<VROARAnchor>> _anchors; // Unused in ARCore
     std::shared_ptr<VROARPointCloud> _pointCloud;
-
 };
 
 #endif /* VROARFrameARCore_h */

@@ -227,6 +227,8 @@ namespace arcore {
         virtual ~SessionNative();
         virtual ConfigStatus configure(Config *config);
         virtual void setDisplayGeometry(int rotation, int width, int height);
+        virtual void setCameraConfig(int fps, int width, int height);
+        virtual int *getCameraConfig();
         virtual void setCameraTextureName(int32_t textureId);
         virtual void pause();
         virtual void resume();

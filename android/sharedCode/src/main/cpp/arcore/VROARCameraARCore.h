@@ -63,7 +63,6 @@ public:
     void getImageData(uint8_t *outImageData);
     VROVector3f getImageSize();
     void getImageIntrinsics(float *outFx, float *outFy, float *outCx, float *outCy);
-    
 private:
 
     arcore::Frame *_frame;
@@ -98,7 +97,6 @@ private:
      */
     void cropImage(const uint8_t *image, int imageStride, uint8_t *outImageData);
     VROVector3f getCroppedImageSize();
-
 };
 
 #endif /* VROARCameraARCore_h */

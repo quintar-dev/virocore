@@ -48,7 +48,7 @@ import java.util.Map;
 public class Material {
 
     /**
-     * LightingModel defines a formula for combining a material’s diffuse, specular, and other
+     * LightingModel defines a formula for combining a material?s diffuse, specular, and other
      * properties with the Lights in the Scene, and the point of view, to create the color
      * of each rendered pixel.
      */
@@ -62,16 +62,16 @@ public class Material {
         CONSTANT("Constant"),
 
         /**
-         * Lambert’s Law of diffuse reflectance determines the color of the surface. The diffuse
+         * Lambert?s Law of diffuse reflectance determines the color of the surface. The diffuse
          * color (or texture) and the angle of incidence between each {@link Light} and the surface
          * determines the color of each pixel. The formula is as follows:
          * <p>
-         * <tt>color = (∑ambientLight + ∑diffuseLight) * diffuseMaterial</tt>
+         * <tt>color = (?ambientLight + ?diffuseLight) * diffuseMaterial</tt>
          * <p>
-         * ∑ambientLight: the sum of all ambient lights in the scene, as contributed by
+         * ?ambientLight: the sum of all ambient lights in the scene, as contributed by
          * ViroAmbientLight objects
          * <p>
-         * ∑diffuseLight: the sum of each non-ambient light's diffuse contribution. Each light's
+         * ?diffuseLight: the sum of each non-ambient light's diffuse contribution. Each light's
          * contribution is defined as follows
          * <p>
          * <tt>diffuseLight = max(0, dot(N, L))</tt>
@@ -85,10 +85,10 @@ public class Material {
          * The Phong approximation of real-world reflectance. This formula adds a specular
          * contribution to the calculation, taking the point of view of the user into account.
          * <p>
-         * <tt>color = (∑ambientLight + ∑diffuseLight) * diffuseMaterial + ∑specularLight *
+         * <tt>color = (?ambientLight + ?diffuseLight) * diffuseMaterial + ?specularLight *
          * specularTexture</tt>
          * <p>
-         * ∑specularLight: the sum of each non-ambient light's specular contribution. Each light's
+         * ?specularLight: the sum of each non-ambient light's specular contribution. Each light's
          * specular contribution is defined as follows
          * <p>
          * <tt>specularLight = pow(max(0, dot(R, E)), shininess)</tt>
@@ -523,40 +523,40 @@ public class Material {
      * @hide
      */
     //#IFDEF 'viro_react'
-    public Material(LightingModel lightingModel, int diffuseColor, Texture diffuseTexture, float diffuseIntensity, Texture specularTexture,
-                    float shininess, float fresnelExponent, Texture normalMap, CullMode cullMode,
-                    TransparencyMode transparencyMode, BlendMode blendMode, float bloomThreshold,
-                    boolean writesToDepthBuffer, boolean readsFromDepthBuffer, EnumSet<ColorWriteMask> colorWriteMask) {
+    //public Material(LightingModel lightingModel, int diffuseColor, Texture diffuseTexture, float diffuseIntensity, Texture specularTexture,
+                    //float shininess, float fresnelExponent, Texture normalMap, CullMode cullMode,
+                    //TransparencyMode transparencyMode, BlendMode blendMode, float bloomThreshold,
+                    //boolean writesToDepthBuffer, boolean readsFromDepthBuffer, EnumSet<ColorWriteMask> colorWriteMask) {
 
-        mWritesToDepthBuffer = writesToDepthBuffer;
-        mReadsFromDepthBuffer = readsFromDepthBuffer;
-        mColorWriteMask = colorWriteMask;
-        mLightingModel = lightingModel;
-        mDiffuseTexture = diffuseTexture;
-        mDiffuseColor = diffuseColor;
-        mDiffuseIntensity = diffuseIntensity;
-        mSpecularTexture = specularTexture;
-        mShininess = shininess;
-        mFresnelExponent = fresnelExponent;
-        mNormalMap = normalMap;
-        mCullMode = cullMode;
-        mTransparencyMode = transparencyMode;
-        mBlendMode = blendMode;
-        mBloomThreshold = bloomThreshold;
-        mNativeRef = nativeCreateImmutableMaterial(lightingModel.getStringValue(),
-                diffuseColor,
-                diffuseTexture != null ? diffuseTexture.mNativeRef : 0,
-                diffuseIntensity,
-                specularTexture != null ? specularTexture.mNativeRef : 0,
-                shininess,
-                fresnelExponent,
-                normalMap != null ? normalMap.mNativeRef : 0,
-                cullMode.getStringValue(),
-                transparencyMode.getStringValue(),
-                blendMode.getStringValue(),
-                bloomThreshold, writesToDepthBuffer, readsFromDepthBuffer,
-                getMaskArray(colorWriteMask));
-    }
+        //mWritesToDepthBuffer = writesToDepthBuffer;
+        //mReadsFromDepthBuffer = readsFromDepthBuffer;
+        //mColorWriteMask = colorWriteMask;
+        //mLightingModel = lightingModel;
+        //mDiffuseTexture = diffuseTexture;
+        //mDiffuseColor = diffuseColor;
+        //mDiffuseIntensity = diffuseIntensity;
+        //mSpecularTexture = specularTexture;
+        //mShininess = shininess;
+        //mFresnelExponent = fresnelExponent;
+        //mNormalMap = normalMap;
+        //mCullMode = cullMode;
+        //mTransparencyMode = transparencyMode;
+        //mBlendMode = blendMode;
+        //mBloomThreshold = bloomThreshold;
+        //mNativeRef = nativeCreateImmutableMaterial(lightingModel.getStringValue(),
+                //diffuseColor,
+                //diffuseTexture != null ? diffuseTexture.mNativeRef : 0,
+                //diffuseIntensity,
+                //specularTexture != null ? specularTexture.mNativeRef : 0,
+                //shininess,
+                //fresnelExponent,
+                //normalMap != null ? normalMap.mNativeRef : 0,
+                //cullMode.getStringValue(),
+                //transparencyMode.getStringValue(),
+                //blendMode.getStringValue(),
+                //bloomThreshold, writesToDepthBuffer, readsFromDepthBuffer,
+                //getMaskArray(colorWriteMask));
+    //}
     //#ENDIF
     @Override
     protected void finalize() throws Throwable {
@@ -792,19 +792,19 @@ public class Material {
      * @param diffuseIntensity
      */
     //#IFDEF 'viro_react'
-    public void setDiffuseIntensity(float diffuseIntensity) {
-        mDiffuseIntensity = diffuseIntensity;
-        nativeSetDiffuseIntensity(mNativeRef, diffuseIntensity);
-    }
+    //public void setDiffuseIntensity(float diffuseIntensity) {
+        //mDiffuseIntensity = diffuseIntensity;
+        //nativeSetDiffuseIntensity(mNativeRef, diffuseIntensity);
+    //}
     //#ENDIF
     /**
      * @hide
      * @return
      */
     //#IFDEF 'viro_react'
-    public float getDiffuseIntensity() {
-        return mDiffuseIntensity;
-    }
+    //public float getDiffuseIntensity() {
+        //return mDiffuseIntensity;
+    //}
     //#ENDIF
     /**
      * Set the specular {@link Texture} to use with this Material. The specular Texture defines
@@ -1049,23 +1049,23 @@ public class Material {
      * @param fresnelExponent
      */
     //#IFDEF 'viro_react'
-    public void setFresnelExponent(float fresnelExponent) {
-        mFresnelExponent = fresnelExponent;
-        nativeSetFresnelExponent(mNativeRef, fresnelExponent);
-    }
+    //public void setFresnelExponent(float fresnelExponent) {
+        //mFresnelExponent = fresnelExponent;
+        //nativeSetFresnelExponent(mNativeRef, fresnelExponent);
+    //}
     //#ENDIF
     /**
      * @hide
      * @return
      */
     //#IFDEF 'viro_react'
-    public float getFresnelExponent() {
-        return mFresnelExponent;
-    }
+    //public float getFresnelExponent() {
+        //return mFresnelExponent;
+    //}
     //#ENDIF
     /**
      * Set the {@link LightingModel} to use for this Material. LightingModel defines a formula for
-     * combining a material’s diffuse, specular, and other properties with the Lights in the Scene,
+     * combining a material?s diffuse, specular, and other properties with the Lights in the Scene,
      * and the point of view, to create the color of each rendered pixel.
      * <p>
      * Defaults to {@link LightingModel#CONSTANT}.
@@ -1377,10 +1377,10 @@ public class Material {
          * @return This builder.
          */
         //#IFDEF 'viro_react'
-        public MaterialBuilder diffuseIntensity(float diffuseIntensity) {
-            material.setDiffuseIntensity(diffuseIntensity);
-            return this;
-        }
+        //public MaterialBuilder diffuseIntensity(float diffuseIntensity) {
+            //material.setDiffuseIntensity(diffuseIntensity);
+            //return this;
+        //}
         //#ENDIF
         /**
          * Refer to {@link Material#setSpecularTexture(Texture)}.
@@ -1469,10 +1469,10 @@ public class Material {
          * @return This builder.
          */
         //#IFDEF 'viro_react'
-        public MaterialBuilder fresnelExponent(float fresnelExponent) {
-            material.setFresnelExponent(fresnelExponent);
-            return this;
-        }
+        //public MaterialBuilder fresnelExponent(float fresnelExponent) {
+            //material.setFresnelExponent(fresnelExponent);
+            //return this;
+        //}
         //#ENDIF
         /**
          * Refer to {@link Material#setLightingModel(LightingModel)}.

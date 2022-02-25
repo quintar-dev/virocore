@@ -91,7 +91,6 @@ public:
      vector's x and y components.
      */
     virtual VROVector3f getImageSize() = 0;
-    
 };
 
 #endif /* VROARCamera_h */

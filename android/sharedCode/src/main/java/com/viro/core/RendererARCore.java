@@ -54,9 +54,20 @@ public class RendererARCore extends Renderer {
         long sessionRef = nativeCreateARCoreSession(context);
         nativeSetARCoreSession(mNativeRef, sessionRef);
     }
-
+    //get AR Frame Image
+    public ARImageParams getARFrameImage() {
+        return nativeGetARFrameImage(mNativeRef);
+    }
     public void setARDisplayGeometry(int rotation, int width, int height) {
         nativeSetARDisplayGeometry(mNativeRef, rotation, width, height);
+    }
+
+    public CameraConfigValues[] getCameraConfig() {
+        return nativeGetCameraConfig(mNativeRef);
+    }
+
+    public void setCameraConfig(CameraConfigValues cameraConfigValues) {
+        nativeSetCameraConfig(mNativeRef,cameraConfigValues.getFps(),cameraConfigValues.getWidth(),cameraConfigValues.getHeight());
     }
 
     public void setAnchorDetectionTypes(EnumSet<ViroViewARCore.AnchorDetectionType> types) {
@@ -106,6 +117,9 @@ public class RendererARCore extends Renderer {
                                                    AssetManager assets, PlatformUtil platformUtil,
                                                    boolean enableShadows, boolean enableHDR, boolean enablePBR, boolean enableBloom);
     private native void nativeSetARDisplayGeometry(long nativeRef, int rotation, int width, int height);
+    private native CameraConfigValues[] nativeGetCameraConfig(long nativeRef);
+    private native void nativeSetCameraConfig(long nativeRef,int fps,int width,int height );
+    private native ARImageParams nativeGetARFrameImage(long nativeRef);
     private native void nativeSetAnchorDetectionTypes(long nativeRef, String[] detectionTypes);
     private native long nativeCreateARCoreSession(Context context);
     private native void nativeSetARCoreSession(long nativeRef, long sessionRef);

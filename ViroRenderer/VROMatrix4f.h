@@ -121,14 +121,14 @@ public:
     }
     
     std::string toString() const;
-    
+
 private:
     
     /*
      The 16-float data for this matrix.
      */
     float _mtx[16];
-    
+
 };
 
 inline VROMatrix4f operator*(const VROMatrix4f &lhs, const VROMatrix4f &rhs) {
