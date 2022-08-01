@@ -30,6 +30,9 @@ import com.viro.core.internal.PlatformUtil;
 
 import java.util.EnumSet;
 
+import android.util.Log;
+
+
 /**
  * @hide
  */
@@ -113,6 +116,11 @@ public class RendererARCore extends Renderer {
         return nativeisCameraAutoFocusEnabled(mNativeRef);
     }
 
+    public int setPlaybackDatasetUri(String mp4_dataset_uri)
+    {
+        Log.i("PLAYBACK","RendererARCore.java->setPlaybackDatasetUri()");
+        return nativesetPlaybackDatasetUri(mNativeRef,mp4_dataset_uri);
+    }
     private native long nativeCreateRendererARCore(ClassLoader appClassLoader, Context context,
                                                    AssetManager assets, PlatformUtil platformUtil,
                                                    boolean enableShadows, boolean enableHDR, boolean enablePBR, boolean enableBloom);
@@ -132,4 +140,5 @@ public class RendererARCore extends Renderer {
     private native void nativeSetCameraImageListener(long nativeRenderer, long contextRef, CameraImageListener listener);
     private native void nativeSetCameraAutoFocusEnabled(long nativeRenderer, boolean enabled);
     private native boolean nativeisCameraAutoFocusEnabled(long nativeRenderer);
+    private native int nativesetPlaybackDatasetUri(long nativeRenderer, String mp4_dataset_uri);
 }

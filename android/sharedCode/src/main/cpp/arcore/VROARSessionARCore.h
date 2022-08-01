@@ -167,7 +167,7 @@ public:
     jobjectArray getCameraConfig();
 
     void setCameraConfig(int fps, int width, int height);
-
+    int setPlaybackDatasetUri(const char *mp4_dataset_uri);
 private:
 
     /*
