@@ -136,6 +136,8 @@ public:
      */
     bool isCameraAutoFocusEnabled();
 
+    int setPlaybackDatasetUri(const char *mp4_dataset_uri);
+
     /*
      Set the anchor detection mode used by ARCore.
      */

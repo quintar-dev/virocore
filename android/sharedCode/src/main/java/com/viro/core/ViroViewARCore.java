@@ -1157,4 +1157,11 @@ public class ViroViewARCore extends ViroView {
         }
         return false;
     }
+
+    public int setPlaybackDatasetUri(String mp4_dataset_uri) {
+        if (!mDestroyed) {
+            return ((RendererARCore) mNativeRenderer).setPlaybackDatasetUri(mp4_dataset_uri);
+        }
+        return 1234;
+    }
 }

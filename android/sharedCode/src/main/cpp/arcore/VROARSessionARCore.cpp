@@ -1110,15 +1110,15 @@ uint8_t *VROARSessionARCore::getRotatedCameraImageData(int size) {
     return _rotatedImageData;
 }
 
-int VROARSessionARCore::setPlaybackDatasetUri(const char *mp4_dataset_uri)
+ArStatus VROARSessionARCore::setPlaybackDatasetUri(const char *mp4_dataset_uri)
 {
     pinfo("[%s][%s][line no: %d]",__FILE__,__func__,__LINE__);
     ArStatus stat=AR_ERROR_INVALID_ARGUMENT;
     if(_session != nullptr)
     {
-        _session->pause();
-        stat=_session->setPlaybackDatasetUri(this,mp4_dataset_uri);
-        _session->resume();
+//        _session->pause();
+        stat=_session->setPlaybackDatasetUri(nullptr,mp4_dataset_uri);
+//        _session->resume();
     }
     return stat;
 }

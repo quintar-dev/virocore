@@ -389,7 +389,7 @@ VRO_METHOD(VRO_INT, nativesetPlaybackDatasetUri)(VRO_ARGS jlong nativeRenderer, 
     std::shared_ptr<VROSceneRendererARCore> arRenderer = std::dynamic_pointer_cast<VROSceneRendererARCore>(renderer);
     
     pinfo("[%s][%s][line no: %d]",__FILE__,__func__,__LINE__);
-    return arRenderer->setPlaybackDatasetUri(mp4_dataset_uri);
+    return arRenderer->setPlaybackDatasetUri(VRO_STRING_GET_CHARS(mp4_dataset_uri));
 }
 }
 
