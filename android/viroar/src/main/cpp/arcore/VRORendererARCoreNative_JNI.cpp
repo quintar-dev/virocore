@@ -21,7 +21,11 @@ VRO_METHOD(jlong, nativeCreateARCoreSession)(JNIEnv *env, jobject object, jobjec
     arcore::Session *session = new arcore::SessionNative(context, env);
     return reinterpret_cast<jlong>(session);
 }
-
+VRO_METHOD(jlong, nativeSetPlayback)(JNIEnv *env, jobject object, jobject context,jstring uri)
+{
+    arcore::Session *session = new arcore::SessionNative(context, env);
+    session->setPlaybackDatasetUri(env->GetStringUTFChars(uri, NULL));
+}
 }
 
 

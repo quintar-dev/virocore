@@ -322,7 +322,7 @@ namespace arcore {
         virtual Anchor *acquireNewAnchor(const Pose *pose) = 0;
         virtual Anchor *hostAndAcquireNewCloudAnchor(const Anchor *anchor, AnchorAcquireStatus *status) = 0;
         virtual Anchor *resolveAndAcquireNewCloudAnchor(const char *anchorId, AnchorAcquireStatus *status) = 0;
-        virtual ArStatus setPlaybackDatasetUri(ArSession *session,const char *mp4_dataset_uri)=0;
+        virtual ArStatus setPlaybackDatasetUri(const char *mp4_dataset_uri)=0;
     };
 }
 

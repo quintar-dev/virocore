@@ -440,5 +440,13 @@ void VROSceneRendererARCore::setAnchorDetectionTypes(std::set<VROAnchorDetection
 void VROSceneRendererARCore::enableTracking(bool shouldTrack) {
 
 }
+int VROSceneRendererARCore::setPlaybackDatasetUri(const char *mp4_dataset_uri)
+{
+    ArStatus stat;
+    _session->pause();
+    stat=(ArStatus)_session->setPlaybackDatasetUri(mp4_dataset_uri);
+    _session->run();
+    return stat;
+}
 
 

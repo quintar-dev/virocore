@@ -1117,7 +1117,7 @@ int VROARSessionARCore::setPlaybackDatasetUri(const char *mp4_dataset_uri)
     if(_session != nullptr)
     {
         _session->pause();
-        stat=_session->setPlaybackDatasetUri(this,mp4_dataset_uri);
+        stat=_session->setPlaybackDatasetUri(mp4_dataset_uri);
         _session->resume();
     }
     return stat;
