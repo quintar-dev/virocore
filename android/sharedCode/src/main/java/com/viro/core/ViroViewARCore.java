@@ -71,6 +71,9 @@ import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.egl.EGLSurface;
 import javax.microedition.khronos.opengles.GL10;
 
+import com.viro.renderer.*;
+
+
 /**
  * ViroViewARCore is a {@link ViroView} for rendering augmented reality scenes using Google's ARCore
  * API for tracking. When using this view, the camera's real-time video feed will be rendered to the
@@ -1019,7 +1022,12 @@ public class ViroViewARCore extends ViroView {
      * To set camera configuration
      */
     public void setCameraConfiguration(CameraConfigValues cameraConfigValues) {
+        Log.d("PLAYBACK","Log setCameraConfiguration");
         ((RendererARCore) mNativeRenderer).setCameraConfig(cameraConfigValues);
+    }
+
+    public void testfn123() {
+        Log.d("PLAYBACK","Log testfn123");
     }
 
     /**
@@ -1159,8 +1167,10 @@ public class ViroViewARCore extends ViroView {
     }
 
     public int setPlaybackDatasetUri(String mp4_dataset_uri) {
+        Log.d("PLAYBACK","Log setPlaybackDatasetUri");
         if (!mDestroyed) {
-            return ((RendererARCore) mNativeRenderer).setPlaybackDatasetUri(mp4_dataset_uri);
+            long value = 0L;
+            return ((RendererARCore) mNativeRenderer).setPlaybackDatasetUri(value, mp4_dataset_uri);
         }
         return 1234;
     }

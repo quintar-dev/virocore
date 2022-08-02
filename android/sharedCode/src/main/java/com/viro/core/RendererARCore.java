@@ -116,7 +116,7 @@ public class RendererARCore extends Renderer {
         return nativeisCameraAutoFocusEnabled(mNativeRef);
     }
 
-    public int setPlaybackDatasetUri(String mp4_dataset_uri)
+    public int setPlaybackDatasetUri(long nativeRenderer, String mp4_dataset_uri)
     {
         Log.i("PLAYBACK","RendererARCore.java->setPlaybackDatasetUri()");
         return nativesetPlaybackDatasetUri(mNativeRef,mp4_dataset_uri);
