@@ -441,4 +441,14 @@ void VROSceneRendererARCore::enableTracking(bool shouldTrack) {
 
 }
 
+int VROSceneRendererARCore::setPlaybackDatasetUri(const char *mp4_dataset_uri) {
+    pinfo("[%s][%s][line no: %d]",__FILE__,__func__,__LINE__);
+    _session->pause();
+    ArStatus stat = _session->setPlaybackDatasetUri(mp4_dataset_uri);
+    _session->run();
+    return stat;
+
+    return -1;
+}
+
 

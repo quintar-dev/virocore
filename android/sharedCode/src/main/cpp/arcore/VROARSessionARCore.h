@@ -168,6 +168,8 @@ public:
 
     void setCameraConfig(int fps, int width, int height);
 
+    ArStatus setPlaybackDatasetUri(const char *mp4_dataset_uri);
+
 private:
 
     /*

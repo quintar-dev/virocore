@@ -152,6 +152,8 @@ public:
 
     void setCameraConfig(jint fps, jint width, jint height);
 
+    int setPlaybackDatasetUri(const char *mp4_dataset_uri);
+
 private:
 
     void renderFrame();

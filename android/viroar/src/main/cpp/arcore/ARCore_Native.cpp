@@ -1084,4 +1084,12 @@ namespace arcore {
         };
     }
 
+    ArStatus SessionNative::setPlaybackDatasetUri(ArSession *session,const char *mp4_dataset_uri)
+    {
+        pinfo("[%s][%s][line no: %d]",__FILE__,__func__,__LINE__);
+        ArStatus status = ArSession_setPlaybackDatasetUri(_session,mp4_dataset_uri);
+        pinfo("[%s][%s][line no: %d][%s][ status : %d]",__FILE__,__func__,__LINE__,mp4_dataset_uri,status);
+        return status;
+    }
+
 }
