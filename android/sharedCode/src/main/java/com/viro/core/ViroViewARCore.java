@@ -1168,6 +1168,7 @@ public class ViroViewARCore extends ViroView {
             mSurfaceView.onPause();
             mNativeRenderer.onPause();
             int result = ((RendererARCore) mNativeRenderer).setPlaybackDatasetUri( mp4_dataset_uri);
+            ((RendererARCore) mNativeRenderer).initCameraTexture();
             mSurfaceView.onResume();
             mNativeRenderer.onResume();
             return result;

@@ -119,6 +119,10 @@ public class RendererARCore extends Renderer {
         Log.i("PLAYBACK","RendererARCore.java->setPlaybackDatasetUri()");
         return nativesetPlaybackDatasetUri(mNativeRef,mp4_dataset_uri);
     }
+    public void initCameraTexture()
+    {
+        nativeInitCameraTexture(mNativeRef);
+    }
 
     private native long nativeCreateRendererARCore(ClassLoader appClassLoader, Context context,
                                                    AssetManager assets, PlatformUtil platformUtil,
@@ -140,4 +144,5 @@ public class RendererARCore extends Renderer {
     private native void nativeSetCameraAutoFocusEnabled(long nativeRenderer, boolean enabled);
     private native boolean nativeisCameraAutoFocusEnabled(long nativeRenderer);
     private native int nativesetPlaybackDatasetUri(long nativeRenderer, String mp4_dataset_uri);
+    private native void nativeInitCameraTexture(long nativeRenderer);
 }

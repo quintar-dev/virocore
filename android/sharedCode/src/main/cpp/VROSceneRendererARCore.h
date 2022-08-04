@@ -154,6 +154,8 @@ public:
 
     int setPlaybackDatasetUri(const char *mp4_dataset_uri);
 
+    void initCameraTexture();
+
 private:
 
     void renderFrame();
