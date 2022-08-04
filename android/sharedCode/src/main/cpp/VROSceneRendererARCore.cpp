@@ -452,5 +452,8 @@ void VROSceneRendererARCore::initCameraTexture()
 {
     _session->initCameraTexture(_driver);
 }
+int VROSceneRendererARCore::getPlaybackStatus(){
+    return _session->getPlaybackStatus();
+}
 
 

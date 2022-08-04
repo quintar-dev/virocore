@@ -156,6 +156,8 @@ public:
 
     void initCameraTexture();
 
+    int getPlaybackStatus();
+
 private:
 
     void renderFrame();

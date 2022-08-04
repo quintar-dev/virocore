@@ -1123,3 +1123,10 @@ ArStatus VROARSessionARCore::setPlaybackDatasetUri(const char *mp4_dataset_uri)
     pinfo("[%s][%s][line no: %d]",__FILE__,__func__,__LINE__);
     return stat;
 }
+
+int VROARSessionARCore::getPlaybackStatus() {
+    if(_session){
+        return _session->getPlaybackStatus();
+    }
+    return -1;
+}

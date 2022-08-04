@@ -124,6 +124,9 @@ public class RendererARCore extends Renderer {
         nativeInitCameraTexture(mNativeRef);
     }
 
+    public int getPlaybackStatus() {
+        return nativeGetPlaybackStatus(mNativeRef);
+    }
     private native long nativeCreateRendererARCore(ClassLoader appClassLoader, Context context,
                                                    AssetManager assets, PlatformUtil platformUtil,
                                                    boolean enableShadows, boolean enableHDR, boolean enablePBR, boolean enableBloom);
@@ -145,4 +148,5 @@ public class RendererARCore extends Renderer {
     private native boolean nativeisCameraAutoFocusEnabled(long nativeRenderer);
     private native int nativesetPlaybackDatasetUri(long nativeRenderer, String mp4_dataset_uri);
     private native void nativeInitCameraTexture(long nativeRenderer);
+    private native int nativeGetPlaybackStatus(long nativeRenderer);
 }

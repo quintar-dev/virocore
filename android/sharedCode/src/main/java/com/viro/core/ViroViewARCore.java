@@ -1175,4 +1175,7 @@ public class ViroViewARCore extends ViroView {
         }
         return -1;
     }
+    public int getPlaybackStatus() {
+        return ((RendererARCore) mNativeRenderer).getPlaybackStatus();
+    }
 }

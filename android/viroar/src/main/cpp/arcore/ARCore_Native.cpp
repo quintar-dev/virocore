@@ -1091,5 +1091,10 @@ namespace arcore {
         pinfo("[%s][%s][line no: %d][%s][ status : %d]",__FILE__,__func__,__LINE__,mp4_dataset_uri,status);
         return status;
     }
+    int SessionNative::getPlaybackStatus(){
+        ArPlaybackStatus out_playback_status;
+        ArSession_getPlaybackStatus(_session,&out_playback_status);
+        return (int )out_playback_status;
+    }
 
 }

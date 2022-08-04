@@ -397,7 +397,12 @@ VRO_METHOD(void ,nativeInitCameraTexture)(VRO_ARGS jlong nativeRenderer)
     std::shared_ptr<VROSceneRendererARCore> arRenderer = std::dynamic_pointer_cast<VROSceneRendererARCore>(renderer);
     arRenderer->initCameraTexture();
 }
-
+VRO_METHOD(VRO_INT,nativeGetPlaybackStatus)(VRO_ARGS jlong nativeRenderer)
+{
+    std::shared_ptr<VROSceneRenderer> renderer = Renderer::native(nativeRenderer);
+    std::shared_ptr<VROSceneRendererARCore> arRenderer = std::dynamic_pointer_cast<VROSceneRendererARCore>(renderer);
+    return arRenderer->getPlaybackStatus();
+}
 }
 
 
