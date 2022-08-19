@@ -116,7 +116,6 @@ public class RendererARCore extends Renderer {
 
     public int setPlaybackDatasetUri(String mp4_dataset_uri)
     {
-        Log.i("PLAYBACK","RendererARCore.java->setPlaybackDatasetUri()");
         return nativesetPlaybackDatasetUri(mNativeRef,mp4_dataset_uri);
     }
     public void initCameraTexture()
