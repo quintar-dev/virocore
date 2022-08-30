@@ -1109,3 +1109,20 @@ uint8_t *VROARSessionARCore::getRotatedCameraImageData(int size) {
     }
     return _rotatedImageData;
 }
+
+ArStatus VROARSessionARCore::setPlaybackDatasetUri(const char *mp4_dataset_uri)
+{
+    ArStatus stat=AR_ERROR_INVALID_ARGUMENT;
+    if(_session)
+    {
+        stat=_session->setPlaybackDatasetUri(nullptr,mp4_dataset_uri);
+    }
+    return stat;
+}
+
+int VROARSessionARCore::getPlaybackStatus() {
+    if(_session){
+        return _session->getPlaybackStatus();
+    }
+    return -1;
+}
